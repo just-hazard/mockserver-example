@@ -3,18 +3,18 @@ package just.hazard.mockserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import just.hazard.mockserver.entity.Todo;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.Assert;
-import org.junit.jupiter.api.*;
-import org.mockserver.client.server.MockServerClient;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.Header;
-import org.mockserver.model.HttpClassCallback;
 import org.mockserver.model.HttpForward;
 import org.mockserver.model.HttpStatusCode;
 import org.mockserver.verify.VerificationTimes;
@@ -62,7 +62,7 @@ public class MockServerTest {
         ResponseEntity<Todo> entity = postTodoRequest();
         assertEquals("justhis",entity.getBody().getTitle());
         assertEquals("show me the money", entity.getBody().getDescription());
-        Assert.assertEquals(201,entity.getStatusCodeValue());
+        assertEquals(201,entity.getStatusCodeValue());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class MockServerTest {
                         request()
                                 .withPath("/callback")
                 )
-                .callback(
+                .respond(
                         callback()
                                 .withCallbackClass("just.hazard.mockserver.callback.TestExpectationCallback")
                 );
