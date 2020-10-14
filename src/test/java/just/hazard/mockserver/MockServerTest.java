@@ -3,6 +3,7 @@ package just.hazard.mockserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import just.hazard.mockserver.entity.Todo;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -23,7 +24,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,15 +57,25 @@ public class MockServerTest {
 
     @Test
     public void postTodo() throws JsonProcessingException {
-        Todo todo = new Todo();
-        todo.setTitle("justhis");
-        todo.setDescription("show me the money");
+        Todo todo = getTodo();
 
-        setMockApi(todo,HttpMethod.POST,"/todo",HttpStatusCode.CREATED_201,5);
-        ResponseEntity<Todo> entity = postTodoRequest();
-        assertEquals("justhis",entity.getBody().getTitle());
-        assertEquals("show me the money", entity.getBody().getDescription());
-        assertEquals(201,entity.getStatusCodeValue());
+        setMockApi(todo,HttpMethod.POST,"/todo",HttpStatusCode.CREATED_201,1);
+        @NotNull
+        ResponseEntity<Todo> result = postTodoRequest();
+        Optional<Todo> body = Optional.ofNullable(result.getBody());
+        if(body.isPresent())
+        {
+            assertEquals("justhis",body.get().getTitle());
+            assertEquals("show me the money", body.get().getDescription());
+        }
+        assertEquals(201,result.getStatusCodeValue());
+    }
+
+    private Todo getTodo() {
+        return Todo.builder()
+                    .title("justhis")
+                    .description("show me the money")
+                    .build();
     }
 
     @Test
@@ -90,7 +103,7 @@ public class MockServerTest {
     @Test
     public void whenCallbackRequest_ThenCallbackMethodCalled(){
         createExpectationForCallBack();
-        org.apache.http.HttpResponse response= hitTheServerWithGetRequest("/callback");
+        HttpResponse response= hitTheServerWithGetRequest("/callback");
         assertEquals(200,response.getStatusLine().getStatusCode());
     }
 
@@ -112,12 +125,12 @@ public class MockServerTest {
         );
     }
 
-    private org.apache.http.HttpResponse hitTheServerWithPostRequest() {
+    private HttpResponse hitTheServerWithPostRequest() {
         String url = "http://127.0.0.1:1080/validate";
         HttpClient client = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-type", "application/json");
-        org.apache.http.HttpResponse response=null;
+        HttpResponse response=null;
 
         try {
             StringEntity stringEntity = new StringEntity("{username: 'foo', password: 'bar'}");
@@ -131,10 +144,10 @@ public class MockServerTest {
         return response;
     }
 
-    private org.apache.http.HttpResponse hitTheServerWithGetRequest(String page) {
-        String url = "http://127.0.0.1:1080/"+page;
+    private HttpResponse hitTheServerWithGetRequest(String page) {
+        String url = "http://localhost:1080/"+page;
         HttpClient client = HttpClientBuilder.create().build();
-        org.apache.http.HttpResponse response=null;
+        HttpResponse response=null;
         HttpGet get = new HttpGet(url);
         try {
             response=client.execute(get);
@@ -177,7 +190,7 @@ public class MockServerTest {
                 )
                 .forward(
                         forward()
-                                .withHost("www.mock-server.com")
+                                .withHost("www.gbe.kr")
                                 .withPort(80)
                                 .withScheme(HttpForward.Scheme.HTTP)
                 );
@@ -221,9 +234,7 @@ public class MockServerTest {
     public ResponseEntity<Todo> postTodoRequest() {
 
         // given
-        Todo todo = new Todo();
-        todo.setTitle("justhis");
-        todo.setDescription("show me the money");
+        Todo todo = getTodo();
 
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.postForEntity("http://localhost:1080/todo", todo, Todo.class);
