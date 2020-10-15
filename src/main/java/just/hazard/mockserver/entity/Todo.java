@@ -12,6 +12,7 @@ import lombok.Setter;
 @JsonDeserialize(builder = Todo.TodoBuilder.class)
 public class Todo {
 
+    @JsonProperty("id")
     private Long id;
     @JsonProperty("title")
     private String title;
