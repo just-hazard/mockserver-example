@@ -47,16 +47,16 @@
             <artifactId>mockserver-client-java</artifactId>
             <version>${mock-sever-netty-version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${apche-http-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>${apche-http-version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.httpcomponents</groupId>-->
+<!--            <artifactId>httpclient</artifactId>-->
+<!--            <version>${apche-http-version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.httpcomponents</groupId>-->
+<!--            <artifactId>httpcore</artifactId>-->
+<!--            <version>${apche-http-version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

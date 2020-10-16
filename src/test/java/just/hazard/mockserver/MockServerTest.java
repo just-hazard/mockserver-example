@@ -3,10 +3,6 @@ package just.hazard.mockserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import just.hazard.mockserver.entity.Todo;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.*;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
@@ -16,22 +12,18 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpClassCallback.callback;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MockServerTest {
-
-
     private static ClientAndServer mockServer;
 
     // TestInstance 의존 Annotation 기본적으로 단위 테스트 기반으로 데이터를
@@ -64,89 +56,55 @@ public class MockServerTest {
         }
         assertEquals(201,result.getStatusCodeValue());
         // 검증 메서드
-        verifyPostRequest();
+        verifyTodoPostRequest();
     }
 
     @Test
-    @DisplayName("포워드 샘플 및 검증")
-    public void whenGetRequest_ThenForward() throws JsonProcessingException {
-        // 샘플 데이터
-        Todo todo = getTodo();
-        // Mock API 생성
-        createResponseMockApi(todo,HttpMethod.POST,"/todo",HttpStatusCode.CREATED_201,1);
-        createForwardMockApi();
-        String response = getTodoRequest();
-        assertEquals("YeRin",response);
-        verifyGetRequest();
-    }
-
-    @Test
+    @DisplayName("콜백 테스트")
     public void whenCallbackRequest_ThenCallbackMethodCalled(){
+        // given
         createExpectationForCallBack();
-        HttpResponse response= hitTheServerWithGetRequest("/callback");
-        assertEquals(200,response.getStatusLine().getStatusCode());
+        // when
+        ResponseEntity<String> response = callbackGetRequest();
+        // then
+        assertEquals(200,response.getStatusCode().value());
+        verifyCallbackRequest();
     }
 
-    private void verifyPostRequest() throws JsonProcessingException {
+    private void verifyCallbackRequest() {
+        new MockServerClient("localhost", 1080).verify(
+            request()
+                .withMethod(HttpMethod.GET.name())
+                .withPath("/callback")
+        );
+    }
 
+    private void verifyTodoPostRequest() throws JsonProcessingException {
         Todo todo = getTodo();
 
         new MockServerClient("localhost", 1080).verify(
-                request()
-                        .withMethod("POST")
-                        .withPath("/todo")
-                        .withBody(serialize(todo))
-        );
-    }
-    private void verifyGetRequest() {
-        new MockServerClient("localhost", 1080).verify(
-                request()
-                        .withMethod("GET")
-                        .withPath("/todo")
+            request()
+                .withMethod("POST")
+                .withPath("/todo")
+                .withBody(serialize(todo))
         );
     }
 
-    private HttpResponse hitTheServerWithGetRequest(String page) {
-        String url = "http://localhost:1080/"+page;
-        HttpClient client = HttpClientBuilder.create().build();
-        HttpResponse response=null;
-        HttpGet get = new HttpGet(url);
-        try {
-            response=client.execute(get);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private ResponseEntity<String> callbackGetRequest() {
 
-        return response;
-    }
-
-    private void createForwardMockApi(){
-        new MockServerClient("localhost", 1080)
-                .when(
-                        request()
-                                .withMethod(HttpMethod.GET.name())
-                                .withPath("/todo")
-                )
-                .forward(
-                        forwardOverriddenRequest(
-                                request()
-                                    .withPath("/todo")
-                                    .withMethod(HttpMethod.POST.name()),
-                                response()
-                                    .withBody("YeRin")
-                        )
-                );
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.getForEntity("http://localhost:1080/callback", String.class);
     }
 
     private void createExpectationForCallBack(){
         mockServer
                 .when(
-                        request()
-                                .withPath("/callback")
+                    request()
+                        .withPath("/callback")
                 )
                 .respond(
-                        callback()
-                                .withCallbackClass("just.hazard.mockserver.callback.TestExpectationCallback")
+                    callback()
+                        .withCallbackClass("just.hazard.mockserver.callback.TestExpectationCallback")
                 );
     }
 
@@ -173,17 +131,12 @@ public class MockServerTest {
             );
     }
 
-    public ResponseEntity<Todo> postTodoRequest() {
+    private ResponseEntity<Todo> postTodoRequest() {
         // given
         Todo todo = getTodo();
 
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.postForEntity("http://localhost:1080/todo", todo, Todo.class);
-    }
-
-    public String getTodoRequest() {
-        RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.getForObject("http://localhost:1080/todo", String.class);
     }
 
     public <T> String serialize(T t) throws JsonProcessingException {
