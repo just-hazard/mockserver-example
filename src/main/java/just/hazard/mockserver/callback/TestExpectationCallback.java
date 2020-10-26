@@ -17,5 +17,5 @@ public class TestExpectationCallback implements ExpectationResponseCallback {
         }
     }
 
-    private static final HttpResponse httpResponse = HttpResponse.response().withStatusCode(200).withDelay(TimeUnit.SECONDS,1);
+    private static final HttpResponse httpResponse = HttpResponse.response().withStatusCode(200).withDelay(TimeUnit.SECONDS,10);
 }

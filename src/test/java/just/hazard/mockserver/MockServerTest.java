@@ -26,8 +26,10 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 public class MockServerTest {
     private static ClientAndServer mockServer;
 
-    // TestInstance 의존 Annotation 기본적으로 단위 테스트 기반으로 데이터를
-    // 새로 구성해야 하지만 Mockserver를 매번 올렸다 내리는 작업 소요 Resource가 많이 들어 라이프사이클 perClass로 지정
+    private final String localhost = "localhost";
+
+    /*TestInstance 의존 Annotation 기본적으로 테스트 단위로 데이터를
+    새로 구성해야 하지만 Mockserver를 매번 올렸다 내리는 작업 소요 Resource가 많이 들어 라이프사이클 perClass로 지정*/
     @BeforeAll
     public void startMockServer() {
         mockServer = startClientAndServer(1080);
@@ -51,8 +53,8 @@ public class MockServerTest {
         Optional<Todo> responseBody = Optional.ofNullable(result.getBody());
         if(responseBody.isPresent())
         {
-            assertEquals("justhis",responseBody.get().getTitle());
-            assertEquals("show me the money", responseBody.get().getDescription());
+            assertEquals("justhis",responseBody.orElseThrow().getTitle());
+            assertEquals("show me the money", responseBody.orElseThrow().getDescription());
         }
         assertEquals(201,result.getStatusCodeValue());
         // 검증 메서드
@@ -61,7 +63,7 @@ public class MockServerTest {
 
     @Test
     @DisplayName("콜백 테스트")
-    public void whenCallbackRequest_ThenCallbackMethodCalled(){
+    void whenCallbackRequest_ThenCallbackMethodCalled(){
         // given
         createExpectationForCallBack();
         // when
@@ -72,7 +74,7 @@ public class MockServerTest {
     }
 
     private void verifyCallbackRequest() {
-        new MockServerClient("localhost", 1080).verify(
+        new MockServerClient(localhost, 1080).verify(
             request()
                 .withMethod(HttpMethod.GET.name())
                 .withPath("/callback")
@@ -82,9 +84,9 @@ public class MockServerTest {
     private void verifyTodoPostRequest() throws JsonProcessingException {
         Todo todo = getTodo();
 
-        new MockServerClient("localhost", 1080).verify(
+        new MockServerClient(localhost, 1080).verify(
             request()
-                .withMethod("POST")
+                .withMethod(HttpMethod.POST.name())
                 .withPath("/todo")
                 .withBody(serialize(todo))
         );
